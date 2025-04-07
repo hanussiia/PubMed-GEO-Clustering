@@ -68,8 +68,6 @@ class Extractor:
                 ",".join(result['data'])
                 counter = 0
 
-        print(result)
-        #result = self._postprocess(result)
         return pd.DataFrame.from_dict(result)   
         
 
@@ -81,17 +79,13 @@ class Extractor:
         return new_data
 
 
-    def exe_file(self):
+    def exe_file(self, file):
         res_df = pd.DataFrame()
-        with open('/Users/hanussiia/Desktop/Projects/PubMedClustering/PMIDs_list.txt', 'r') as file:
-            for id in file:
-                print(f'processing {id}')
-                id = id.replace('\n','')
-                surowiec = self._request_data(id)
-                fried = self._parse(id, surowiec)
-                res_df = pd.concat([res_df, fried])
-            res_df.to_csv('out.csv', index=False)  
+        for id in file:
+            print(f'processing {id}')
+            id = id.decode().replace('\n','')
+            surowiec = self._request_data(id)
+            fried = self._parse(id, surowiec)
+            res_df = pd.concat([res_df, fried])
+        res_df.to_csv('out.csv', index=False)  
         return res_df.reset_index(drop=True)
-                
-test = Extractor()
-print(test.exe_file())
