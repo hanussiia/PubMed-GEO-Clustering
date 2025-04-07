@@ -7,15 +7,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def vectorize(data):
-    #data = pd.read_csv("out.csv")
+def vectorize():
+    data = pd.read_csv("out.csv")
     vectorizer = TfidfVectorizer(stop_words="english")
     tfidf_matrix = vectorizer.fit_transform(data['data'])
 
     print(tfidf_matrix)
 
     similarity_matrix = cosine_similarity(tfidf_matrix)
-    return tfidf_matrix, similarity_matrix
+    return tfidf_matrix, similarity_matrix, data
 
 
 def find_optimal_clusters(tfidf_matrix, max_k, step=2):
@@ -70,7 +70,7 @@ def plot_clusters(data):
 
     scatter = ax.scatter(
         data['id'],
-        data['Title'],
+        data['Organism'],
         c=data['cluster'],
         s=50,
         cmap='viridis',
@@ -79,7 +79,7 @@ def plot_clusters(data):
 
     ax.set_title('K-Means Clustering')
     ax.set_xlabel('id')
-    ax.set_ylabel('Title')
+    ax.set_ylabel('Organism')
     plt.colorbar(scatter, label='Cluster')
 
     return fig
