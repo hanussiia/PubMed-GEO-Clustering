@@ -2,8 +2,6 @@ from extract import Extractor
 import clustering as cl
 import streamlit as st
 import pandas as pd
-from io import StringIO
-
 
 extractor = Extractor()
 
