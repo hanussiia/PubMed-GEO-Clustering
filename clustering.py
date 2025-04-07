@@ -1,45 +1,85 @@
-from extract import Extractor
-
 from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-
+from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
+import pandas as pd
+import numpy as np 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# e = Extractor()
-# data = exe_file()
-data = pd.read_csv("out.csv")
 
-vectorizer = TfidfVectorizer()
-X = vectorizer.fit_transform(data)
+def vectorize(data):
+    #data = pd.read_csv("out.csv")
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform(data['data'])
 
-feature_names = vectorizer.get_feature_names_out()
-X_scores = X.toarray()[0]
+    print(tfidf_matrix)
 
-sorted_keywords = [word for _, word in sorted(zip(X_scores, feature_names), reverse=True)]
+    similarity_matrix = cosine_similarity(tfidf_matrix)
+    return tfidf_matrix, similarity_matrix
 
-print("Ключевые слова:", sorted_keywords)
 
-num_clusters = 16
-kmeans = KMeans(n_clusters=num_clusters, random_state=0)
-kmeans.fit(X)
+def find_optimal_clusters(tfidf_matrix, max_k, step=2):
+    sse = []
+    k_values = range(2, max_k+1, step)
+    
+    for k in k_values:
+        kmeans = KMeans(n_clusters=k, random_state=20)
+        kmeans.fit(tfidf_matrix)
+        sse.append(kmeans.inertia_)
+    
+    first_deriv = np.diff(sse)
+    second_deriv = np.diff(first_deriv)
+    
+    max_arg = np.argmax(second_deriv) + 1
+    optimal_k = k_values[max_arg]
+    
+    f, ax = plt.subplots(1, 1, figsize=(10, 6))
+    ax.plot(k_values, sse, marker='o')
+    ax.axvline(optimal_k, color='r', linestyle='--', label=f'Optimal k = {optimal_k}')
+    ax.set_xlabel('Number of clusters', fontsize=12)
+    ax.set_ylabel('SSE (Inertia)', fontsize=12)
+    ax.set_xticks(k_values)
+    ax.grid(True)
+    ax.legend()
+    
+    plt.tight_layout()
+    
+    print(f'Optimal number of clusters: {optimal_k}')
+    return f, optimal_k
 
-for cluster_id in range(num_clusters):
-    cluster_indices = np.where(kmeans.labels_ == cluster_id)[0]
-    print(f"Cluster {cluster_id + 1}:")
-    for idx in cluster_indices:
-        print(data.loc[int(idx)])
-    print("--------")
 
-sk_kmeans = KMeans(n_clusters=8, n_init='auto', random_state=0)
-sk_kmeans.fit(X1)
-sk_kmeans_pred_res = sk_kmeans.predict(X1)
-sk_kmeans_ari = adjusted_rand_score(y1, sk_kmeans_pred_res)
-sk_kmeans_centroinds = sk_kmeans.cluster_centers_
-print(f'Adjusted Rand Score for sk KMeans: {sk_kmeans_ari}', '', sep='\n')
-print(sk_kmeans_centroinds, '', sep='\n')
-print('prediction', sk_kmeans_pred_res, sep='\n')
+def clustering(tfidf_matrix, original_data, num_clusters):
+    kmeans = KMeans(n_clusters=num_clusters, random_state=0)
+    labels = kmeans.fit_predict(tfidf_matrix)
+    original_data['cluster'] = labels
+    return original_data
+
+
+def plot_similarity(similarity_matrix):
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(similarity_matrix, cmap='viridis')
+    plt.title("Cosine Similarity")
+    plt.xlabel("Document Index")
+    plt.ylabel("Document Index")
+    plt.tight_layout()
+    return plt.gcf() 
+
+def plot_clusters(data):
+    fig = plt.figure(figsize=(10, 6))
+    ax = fig.add_subplot(111)
+
+    scatter = ax.scatter(
+        data['id'],
+        data['Title'],
+        c=data['cluster'],
+        s=50,
+        cmap='viridis',
+        alpha=0.6
+    )
+
+    ax.set_title('K-Means Clustering')
+    ax.set_xlabel('id')
+    ax.set_ylabel('Title')
+    plt.colorbar(scatter, label='Cluster')
+
+    return fig

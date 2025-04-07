@@ -36,6 +36,7 @@ class Extractor:
         data = data.replace("\t\t", " ")
         data = data.replace("\t", " ")
         data = data.replace("  ", " ")
+        data = data.replace("Organisms", "Organism")
         data_split = data.split("\n")
         return data_split
         
@@ -43,7 +44,9 @@ class Extractor:
     def _parse(self, id, data: list):
         counter = 0
         result = {'id': id,
-                  'data': []
+                  'data': [],
+                  'Organism': '',
+                  'Title': ''
                  }
 
         for index, line in enumerate(data):
@@ -51,6 +54,8 @@ class Extractor:
                 if counter == 0:
                     splitted = data[index][3:]
                     result['data'].append(splitted)
+                    result['Title'] = splitted
+                    print(result)
 
                 elif counter == 1:
                     splitted = data[index]
@@ -62,6 +67,8 @@ class Extractor:
                         pass
                     else:
                         result['data'].append(splitted[1])
+                        if splitted[0] == 'Organism':
+                            result['Organism'] = splitted[1]
 
                 counter += 1
             else:
